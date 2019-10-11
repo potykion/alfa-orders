@@ -1,8 +1,11 @@
 import datetime as dt
 import time
+from itertools import takewhile
 
 import requests
 from typing import List, Dict, Iterable
+
+from more_itertools import flatten
 from typing_extensions import TypedDict
 from utils import timestamp_now
 
@@ -10,6 +13,7 @@ HOST = "https://engine.paymentgate.ru"
 ALFA_DATETIME_FORMAT = "%d.%m.%Y %H:%M:%S"
 RETRY_SECONDS = 60
 PAGE_SIZE = 100
+MAX_FUTURES = 10
 
 # see data/transaction.json and data/transaction_columns.json for order fields
 Transaction = Dict
@@ -55,20 +59,20 @@ class AlfaService:
         return self.session
 
     def get_transactions(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Transaction]:
-        first_start = dt.datetime.now()
         offset = 0
         while True:
-            start = dt.datetime.now()
-            future = self._get_transactions_async(from_date, to_date, offset)
+            futures = [
+                self._get_transactions_async(from_date, to_date, offset + page * PAGE_SIZE)
+                for page in range(MAX_FUTURES)
+            ]
 
-            transactions = self._get_transactions_by_future(future)
+            transactions = list(flatten(self._get_transactions_by_future(future) for future in futures))
             yield from transactions
-            end = dt.datetime.now()
-            print(f"Loaded {offset + PAGE_SIZE} in {end - start}; all time: {end - first_start}")
 
-            if len(transactions) == PAGE_SIZE:
-                offset += PAGE_SIZE
-            else:
+            loaded = min(MAX_FUTURES * PAGE_SIZE, len(transactions))
+            offset += loaded
+
+            if loaded != MAX_FUTURES * PAGE_SIZE:
                 break
 
     def _get_transactions_by_future(self, future: AlfaFuture):
