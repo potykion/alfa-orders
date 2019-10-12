@@ -1,0 +1,21 @@
+{
+  "id": 939757354,
+  "refundDate": 1569877076000,
+  "paymentDate": 1569877049887,
+  "merchantFullName": "KOMETA.FIT",
+  "mdOrder": "4208760c-4f01-71a3-8146-647b00345b46",
+  "orderNumber": "1027600",
+  "amount": "1,00",
+  "maskedPan": "424205**0997",
+  "refundState": "POSTED",
+  "currencyName": "RUR",
+  "cardholder": "Stanislav perekhodyuk",
+  "bankName": "Pjsc Bank Uralsib",
+  "countryName": "RU",
+  "actionCode": "000",
+  "refNum": "409925608466",
+  "processingId": "810656",
+  "terminalId": "803134",
+  "paymentSystem": null,
+  "merchantMcc": "7997"
+}
