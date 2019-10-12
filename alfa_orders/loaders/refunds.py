@@ -19,8 +19,8 @@ class RefundLoader(BaseLoader[Refund]):
             'limit': self.config.PAGE_SIZE,
             'sort': 'refundDate',
             'dir': 'DESC',
-            'dateFrom': from_date.strftime(self.DATETIME_FORMAT),
-            'dateTo': to_date.strftime(self.DATETIME_FORMAT),
+            'dateFrom': (from_date - dt.timedelta(hours=3)).strftime(self.DATETIME_FORMAT),
+            'dateTo':   (to_date - dt.timedelta(hours=3)).strftime(self.DATETIME_FORMAT),
         }
         response = self.session.post(
             f"{self.config.HOST}/mportal/mvc/refunds/search",

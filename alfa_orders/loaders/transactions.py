@@ -1,6 +1,5 @@
 import datetime as dt
 import time
-from functools import partial
 
 from typing import Dict
 
@@ -21,8 +20,8 @@ class TransactionLoader(BaseLoader[Transaction]):
         data = {
             "start": offset,
             "limit": self.config.PAGE_SIZE,
-            "dateFrom": from_date.strftime(self.DATETIME_FORMAT),
-            "dateTo": to_date.strftime(self.DATETIME_FORMAT),
+            "dateFrom": (from_date - dt.timedelta(hours=3)).strftime(self.DATETIME_FORMAT),
+            "dateTo": (to_date - dt.timedelta(hours=3)).strftime(self.DATETIME_FORMAT),
             "orderStateStr": "DEPOSITED,REFUNDED",
             "page": '1',
             "dateMode": "CREATION_DATE",

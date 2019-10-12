@@ -11,6 +11,7 @@ from alfa_orders.api import AlfaService
 username, password = ("**********", "**********")
 service = AlfaService(username, password)
 
+# from_date, to_date should be in UTC+3
 from_date, to_date = dt.datetime(2019, 9, 1), dt.datetime(2019, 10, 1)
 transactions = list(service.get_transactions(from_date, to_date))
 refunds = list(service.get_refunds(from_date, to_date))
