@@ -1,9 +1,11 @@
+import datetime as dt
+from abc import abstractmethod
 from itertools import count
-from typing import Iterable, Callable, Generic
+from typing import Iterable, Generic
 
 from more_itertools import flatten, chunked
 
-from alfa_orders.models import Offset, AlfaFuture, T
+from alfa_orders.models import AlfaFuture, T
 
 
 class BaseLoader(Generic[T]):
@@ -11,20 +13,25 @@ class BaseLoader(Generic[T]):
         self.session = session
         self.config = config
 
-    def _get_orders(self, request_page: Callable[[Offset], AlfaFuture], fetch_page: Callable[[AlfaFuture], Iterable[T]]) -> Iterable[T]:
-        # 0, 100, 200, ...
-        offsets = count(0, self.config.PAGE_SIZE)
-        # request_transactions(0), request_transactions(100), ...
-        transaction_requests = map(request_page, offsets)
-        # [request_transactions(0), request_transactions(100), ...], [request_transactions(500), request_transactions(600), ...], ...
-        transaction_request_batches = chunked(transaction_requests, self.config.MAX_FUTURES)
-        # [trans_1, ..., trans_1000], [trans_1001, ..., trans_2000], ...
-        transaction_batches = (
-            tuple(flatten(map(fetch_page, future_batch)))
-            for future_batch in transaction_request_batches
-        )
+    def __call__(self, from_date, to_date):
+        yield from self._load(from_date, to_date)
 
-        for batch in transaction_batches:
+    def _load(self, from_date, to_date):
+        futures = (self._get_future(from_date, to_date, offset) for offset in count(0, self.config.PAGE_SIZE))
+        future_batches = chunked(futures, self.config.MAX_FUTURES)
+        order_batches = (
+            tuple(flatten(map(self._get_by_future, batch)))
+            for batch in future_batches
+        )
+        for batch in order_batches:
             yield from batch
             if len(batch) < self.config.PAGE_SIZE * self.config.MAX_FUTURES:
                 break
+
+    @abstractmethod
+    def _get_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
+        pass
+
+    @abstractmethod
+    def _get_by_future(self, future: AlfaFuture) -> Iterable[T]:
+        pass

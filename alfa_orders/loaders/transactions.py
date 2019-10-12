@@ -11,21 +11,18 @@ from alfa_orders.utils import timestamp_now
 # see data/transaction.json and data/transaction_columns.json for order fields
 Transaction = Dict
 
-class TransactionLoader(BaseLoader[Transaction]):
-    def __call__(self, from_date, to_date):
-        yield from self._get_orders(
-            partial(self._get_transactions_future, from_date, to_date),
-            self._get_transactions_by_future
-        )
 
-    def _get_transactions_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
+class TransactionLoader(BaseLoader[Transaction]):
+    DATETIME_FORMAT = "%d.%m.%Y %H:%M:%S"
+
+    def _get_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
         url = f"{self.config.HOST}/mportal/mvc/transaction"
         params = {"_dc": timestamp_now()}
         data = {
             "start": offset,
             "limit": self.config.PAGE_SIZE,
-            "dateFrom": from_date.strftime(self.config.ALFA_DATETIME_FORMAT),
-            "dateTo": to_date.strftime(self.config.ALFA_DATETIME_FORMAT),
+            "dateFrom": from_date.strftime(self.DATETIME_FORMAT),
+            "dateTo": to_date.strftime(self.DATETIME_FORMAT),
             "orderStateStr": "DEPOSITED,REFUNDED",
             "page": '1',
             "dateMode": "CREATION_DATE",
@@ -36,8 +33,7 @@ class TransactionLoader(BaseLoader[Transaction]):
         response_json = response.json()
         return response_json
 
-
-    def _get_transactions_by_future(self, future: AlfaFuture):
+    def _get_by_future(self, future: AlfaFuture):
         url = f"{self.config.HOST}/mportal/mvc/transaction"
         params = {"_dc": timestamp_now()}
         data = future
