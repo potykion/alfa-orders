@@ -1,4 +1,26 @@
-{
+RefundColumns = {
+  "id": "ID",
+  "refundDate": "Дата возврата",
+  "paymentDate": "Дата платежа",
+  "merchantFullName": "Название продавца",
+  "mdOrder": "ID заказа",
+  "orderNumber": "Номер заказа",
+  "amount": "Сумма возврата",
+  "maskedPan": "Номер карты",
+  "refundState": "Состояние возврата",
+  "currencyName": "Валюта",
+  "cardholder": "Держатель карты",
+  "bankName": "Банк-эмитент",
+  "countryName": "Страна банка-эмитента",
+  "actionCode": "Код результата",
+  "refNum": "Reference number",
+  "processingId": "ID процессинга",
+  "terminalId": "ID терминала",
+  "paymentSystem": "МПС",
+  "merchantMcc": "MCC"
+}
+
+TransactionColumns = {
   "orderNumber": "Номер заказа",
   "registerDate": "Дата",
   "ip": "IP-адрес",
