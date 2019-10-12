@@ -1,24 +1,19 @@
 import datetime as dt
 from typing import Iterable
 
-import requests
 
+from alfa_orders.config import AlfaConfig
 from alfa_orders.loaders.transactions import TransactionLoader, Transaction
 from alfa_orders.session import create_alfa_session
 
 
 class AlfaService:
-    def __init__(self, username: str, password: str) -> None:
-        self.username = username
-        self.password = password
-        self.session = None
-
-    def init_session(self) -> requests.Session:
-        self.session = create_alfa_session(self.username, self.password)
-        return self.session
+    def __init__(self, username: str, password: str, config: AlfaConfig = None) -> None:
+        self.config = config or AlfaConfig()
+        self.session = create_alfa_session(username, password, self.config)
 
     def get_transactions(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Transaction]:
-        return TransactionLoader(self.session)(from_date, to_date)
+        return TransactionLoader(self.session, self.config)(from_date, to_date)
 
     # def get_refunds(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Refund]:
     #     yield from self._get_orders(

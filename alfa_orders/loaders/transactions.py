@@ -4,7 +4,6 @@ from functools import partial
 
 from typing import Dict
 
-from alfa_orders.config import HOST, ALFA_DATETIME_FORMAT, PAGE_SIZE, RETRY_SECONDS
 from alfa_orders.loaders.base import BaseLoader
 from alfa_orders.models import AlfaFutureResult, AlfaFuture
 from alfa_orders.utils import timestamp_now
@@ -13,9 +12,6 @@ from alfa_orders.utils import timestamp_now
 Transaction = Dict
 
 class TransactionLoader(BaseLoader[Transaction]):
-    def __init__(self, session):
-        self.session = session
-
     def __call__(self, from_date, to_date):
         yield from self._get_orders(
             partial(self._get_transactions_future, from_date, to_date),
@@ -23,13 +19,13 @@ class TransactionLoader(BaseLoader[Transaction]):
         )
 
     def _get_transactions_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
-        url = f"{HOST}/mportal/mvc/transaction"
+        url = f"{self.config.HOST}/mportal/mvc/transaction"
         params = {"_dc": timestamp_now()}
         data = {
             "start": offset,
-            "limit": PAGE_SIZE,
-            "dateFrom": from_date.strftime(ALFA_DATETIME_FORMAT),
-            "dateTo": to_date.strftime(ALFA_DATETIME_FORMAT),
+            "limit": self.config.PAGE_SIZE,
+            "dateFrom": from_date.strftime(self.config.ALFA_DATETIME_FORMAT),
+            "dateTo": to_date.strftime(self.config.ALFA_DATETIME_FORMAT),
             "orderStateStr": "DEPOSITED,REFUNDED",
             "page": '1',
             "dateMode": "CREATION_DATE",
@@ -42,11 +38,11 @@ class TransactionLoader(BaseLoader[Transaction]):
 
 
     def _get_transactions_by_future(self, future: AlfaFuture):
-        url = f"{HOST}/mportal/mvc/transaction"
+        url = f"{self.config.HOST}/mportal/mvc/transaction"
         params = {"_dc": timestamp_now()}
         data = future
 
-        for _ in range(RETRY_SECONDS):
+        for _ in range(self.config.RETRY_SECONDS):
             resp = self.session.post(url, data, params=params)
 
             resp_json: AlfaFutureResult = resp.json()
@@ -55,4 +51,4 @@ class TransactionLoader(BaseLoader[Transaction]):
 
             time.sleep(1)
         else:
-            raise LookupError(f"No orders for future {future['future']} in {RETRY_SECONDS} seconds")
+            raise LookupError(f"No orders for future {future['future']} in {self.config.RETRY_SECONDS} seconds")
