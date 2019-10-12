@@ -21,9 +21,6 @@ class RefundLoader(BaseLoader[Refund]):
             'dir': 'DESC',
             'dateFrom': from_date.strftime(self.DATETIME_FORMAT),
             'dateTo': to_date.strftime(self.DATETIME_FORMAT),
-            'banksInversion': 'false',
-            'countriesInversion': 'false',
-            'merchantSearchByLogin': 'true'
         }
         response = self.session.post(
             f"{self.config.HOST}/mportal/mvc/refunds/search",

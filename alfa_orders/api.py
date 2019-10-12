@@ -16,7 +16,6 @@ class AlfaService:
     def get_transactions(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Transaction]:
         return TransactionLoader(self.session, self.config)(from_date, to_date)
 
-
     def get_refunds(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Refund]:
         return RefundLoader(self.session, self.config)(from_date, to_date)
 
