@@ -4,7 +4,7 @@ from functools import partial
 from itertools import takewhile, count, repeat
 
 import requests
-from typing import List, Dict, Iterable
+from typing import List, Dict, Iterable, Callable, TypeVar
 
 from more_itertools import flatten, chunked
 from typing_extensions import TypedDict
@@ -18,6 +18,10 @@ MAX_FUTURES = 10
 
 # see data/transaction.json and data/transaction_columns.json for order fields
 Transaction = Dict
+
+Offset = int
+
+T = TypeVar("T")
 
 
 class AlfaFuture(TypedDict):
@@ -60,44 +64,36 @@ class AlfaService:
         return self.session
 
     def get_transactions(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Transaction]:
-        request_transactions = partial(self._get_transactions_async, from_date, to_date)
+        yield from self._get_orders(
+            partial(self._get_transactions_future, from_date, to_date),
+            self._get_transactions_by_future
+        )
 
+    # def get_refunds(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Refund]:
+    #     yield from self._get_orders(
+    #         partial(self._get_refunds_future, from_date, to_date),
+    #         self._get_refunds_by_future
+    #     )
+
+    def _get_orders(self, request_page: Callable[[Offset], AlfaFuture], fetch_page: Callable[[AlfaFuture], Iterable[T]]) -> Iterable[T]:
         # 0, 100, 200, ...
         offsets = count(0, PAGE_SIZE)
         # request_transactions(0), request_transactions(100), ...
-        transaction_requests = map(request_transactions, offsets)
+        transaction_requests = map(request_page, offsets)
         # [request_transactions(0), request_transactions(100), ...], [request_transactions(500), request_transactions(600), ...], ...
         transaction_request_batches = chunked(transaction_requests, MAX_FUTURES)
         # [trans_1, ..., trans_1000], [trans_1001, ..., trans_2000], ...
-        transaction_batches = map(self._get_transactions_by_future_batch, transaction_request_batches)
+        transaction_batches = (
+            tuple(flatten(map(fetch_page, future_batch)))
+            for future_batch in transaction_request_batches
+        )
 
         for batch in transaction_batches:
             yield from batch
             if len(batch) < PAGE_SIZE * MAX_FUTURES:
                 break
 
-    def _get_transactions_by_future_batch(self, future_batch: Iterable[AlfaFuture]):
-        return tuple(flatten(map(self._get_transactions_by_future, future_batch)))
-
-    def _get_transactions_by_future(self, future: AlfaFuture):
-        print(future)
-        url = f"{HOST}/mportal/mvc/transaction"
-        params = {"_dc": timestamp_now()}
-        data = future
-
-        for _ in range(RETRY_SECONDS):
-            resp = self.session.post(url, data, params=params)
-
-            resp_json: AlfaFutureResult = resp.json()
-            if resp_json["done"]:
-                return resp_json["data"]
-
-            time.sleep(1)
-        else:
-            raise LookupError(f"No orders for future {future['future']} in {RETRY_SECONDS} seconds")
-
-    def _get_transactions_async(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
-        print(offset)
+    def _get_transactions_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
         url = f"{HOST}/mportal/mvc/transaction"
         params = {"_dc": timestamp_now()}
         data = {
@@ -113,5 +109,22 @@ class AlfaService:
         response = self.session.post(url, data, params=params)
         response.raise_for_status()
         response_json = response.json()
-        print(response_json)
         return response_json
+
+    def _get_transactions_by_future(self, future: AlfaFuture):
+        url = f"{HOST}/mportal/mvc/transaction"
+        params = {"_dc": timestamp_now()}
+        data = future
+
+        for _ in range(RETRY_SECONDS):
+            resp = self.session.post(url, data, params=params)
+
+            resp_json: AlfaFutureResult = resp.json()
+            if resp_json["done"]:
+                return resp_json["data"]
+
+            time.sleep(1)
+        else:
+            raise LookupError(f"No orders for future {future['future']} in {RETRY_SECONDS} seconds")
+
+    def _get_refunds_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
