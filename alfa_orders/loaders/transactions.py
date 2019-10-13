@@ -3,6 +3,7 @@ import time
 
 from typing import Dict
 
+from alfa_orders.columns import TransactionColumns
 from alfa_orders.loaders.base import BaseLoader
 from alfa_orders.models import AlfaFutureResult, AlfaFuture
 from alfa_orders.utils import timestamp_now
@@ -13,6 +14,7 @@ Transaction = Dict
 
 class TransactionLoader(BaseLoader[Transaction]):
     DATETIME_FORMAT = "%d.%m.%Y %H:%M:%S"
+    columns = TransactionColumns
 
     def _get_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
         url = f"{self.config.HOST}/mportal/mvc/transaction"

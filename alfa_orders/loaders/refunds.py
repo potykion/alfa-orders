@@ -2,6 +2,7 @@ import datetime as dt
 import time
 from typing import Dict, Iterable
 
+from alfa_orders.columns import RefundColumns
 from alfa_orders.loaders.base import BaseLoader
 from alfa_orders.models import AlfaFuture, AlfaFutureResult
 from alfa_orders.utils import timestamp_now
@@ -11,6 +12,7 @@ Refund = Dict
 
 class RefundLoader(BaseLoader[Refund]):
     DATETIME_FORMAT = "%d.%m.%Y %H:%M"
+    columns = RefundColumns
 
     def _get_future(self, from_date: dt.datetime, to_date: dt.datetime, offset: int = 0) -> AlfaFuture:
         data = {

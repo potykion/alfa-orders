@@ -43,7 +43,9 @@ TransactionColumns = {
   "clientId": "Идентификатор клиента",
   "phone": "Телефон клиента",
   "email": "Email клиента",
-  "orderParamsAsString": "Дополнительные параметры заказа"
+  "orderParamsAsString": "Дополнительные параметры заказа",
+  # extra columns
+  "paymentStateDescription": "Описание состояния",
 }
 
 RefundColumns = {

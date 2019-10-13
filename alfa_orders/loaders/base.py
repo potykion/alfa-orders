@@ -8,7 +8,6 @@ from more_itertools import flatten, chunked
 
 from alfa_orders.config import AlfaConfig
 from alfa_orders.models import AlfaFuture, T
-from alfa_orders.processors import TimestampProcessor
 
 
 class BaseLoader(Generic[T]):
@@ -17,10 +16,19 @@ class BaseLoader(Generic[T]):
         self.config = config
         self.post_processors = []
         if config.PARSE_TIMESTAMP:
-            self.post_processors.append(TimestampProcessor(self.config))
+            from alfa_orders.processors import TimestampProcessor
+            self.post_processors.append(TimestampProcessor(self, self.config))
+        if config.MAP_RUSSIAN_COLUMNS:
+            from alfa_orders.processors import RussianColumnProcessor
+            self.post_processors.append(RussianColumnProcessor(self, self.config))
 
     def __call__(self, from_date, to_date):
         yield from self._load(from_date, to_date)
+
+    @property
+    @abstractmethod
+    def columns(self):
+        pass
 
     def _load(self, from_date, to_date):
         futures = (self._get_future(from_date, to_date, offset) for offset in count(0, self.config.PAGE_SIZE))
