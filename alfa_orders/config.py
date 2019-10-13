@@ -10,3 +10,4 @@ class AlfaConfig:
     PARSE_TIMESTAMP: bool = False
     PARSE_TIMESTAMP_AS_UTC3: bool = False
     MAP_RUSSIAN_COLUMNS: bool = False
+    UTC_3_SEARCH: bool = True
