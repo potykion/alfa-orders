@@ -1,14 +1,14 @@
 import datetime as dt
 from abc import abstractmethod
 from itertools import count
-from typing import Generic, Sequence, Iterable
+from typing import Generic, Iterable
 
 import requests
 from more_itertools import flatten, chunked
 
 from alfa_orders.config import AlfaConfig
 from alfa_orders.models import AlfaFuture, T
-from alfa_orders.utils import parse_timestamp
+from alfa_orders.processors import TimestampProcessor
 
 
 class BaseLoader(Generic[T]):
@@ -17,7 +17,7 @@ class BaseLoader(Generic[T]):
         self.config = config
         self.post_processors = []
         if config.PARSE_TIMESTAMP:
-            self.post_processors.append(self._parse_timestamps)
+            self.post_processors.append(TimestampProcessor(self.config))
 
     def __call__(self, from_date, to_date):
         yield from self._load(from_date, to_date)
@@ -46,14 +46,3 @@ class BaseLoader(Generic[T]):
         for proc in self.post_processors:
             orders = proc(orders)
         return orders
-
-    def _parse_timestamps(self, transactions: Sequence[T]) -> Sequence[T]:
-        for trans in transactions:
-            yield {
-                **trans,
-                **{
-                    field: parse_timestamp(value, self.config.PARSE_TIMESTAMP_AS_UTC3)
-                    for field, value in trans.items()
-                    if "Date" in field
-                }
-            }
