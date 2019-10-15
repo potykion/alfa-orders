@@ -13,3 +13,4 @@ class AlfaConfig:
     PARSE_AMOUNT: bool = False
     MAP_RUSSIAN_COLUMNS: bool = False
     MAP_REFUND_STATUS: bool = False
+    LAZY_SESSION_INIT: bool = False

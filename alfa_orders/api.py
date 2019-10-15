@@ -17,14 +17,26 @@ class AlfaService:
     >>> refunds = list(service.get_refunds(from_date, to_date))
     """
     def __init__(self, username: str, password: str, config: AlfaConfig = None) -> None:
+        self.username = username
+        self.password = password
         self.config = config or AlfaConfig()
-        self.session = create_alfa_session(username, password, self.config)
+
+        if self.config.LAZY_SESSION_INIT:
+            self.session = None
+        else:
+            self.session = self.init_session()
+
+    def init_session(self):
+        self.session = create_alfa_session(self.username, self.password, self.config)
+        return self.session
 
     def get_transactions(
         self, from_date: dt.datetime, to_date: dt.datetime, statuses: List[TransactionStatus] = None
     ) -> Iterable[Transaction]:
+        assert self.session
         return TransactionLoader(self.session, self.config, statuses)(from_date, to_date)
 
     def get_refunds(self, from_date: dt.datetime, to_date: dt.datetime) -> Iterable[Refund]:
+        assert self.session
         return RefundLoader(self.session, self.config)(from_date, to_date)
 
