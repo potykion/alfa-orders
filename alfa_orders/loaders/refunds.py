@@ -9,6 +9,9 @@ from alfa_orders.utils import timestamp_now
 
 Refund = Dict
 
+RefundStatuses = {
+    "POSTED": "Отправлен"
+}
 
 class RefundLoader(BaseLoader[Refund]):
     DATETIME_FORMAT = "%d.%m.%Y %H:%M"
@@ -45,9 +48,14 @@ class RefundLoader(BaseLoader[Refund]):
 
             resp_json: AlfaFutureResult = resp.json()
             if resp_json["done"]:
-                return resp_json["data"]
+                return tuple(map(self.__map_refund_status, resp_json["data"]))
 
             time.sleep(1)
         else:
             raise LookupError(f"No orders for future {future['future']} in {self.config.RETRY_SECONDS} seconds")
 
+    def __map_refund_status(self, refund: Dict) -> Dict:
+        if self.config.MAP_REFUND_STATUS:
+            refund["refundState"] = RefundStatuses[refund["refundState"]]
+
+        return refund
