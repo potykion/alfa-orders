@@ -41,7 +41,7 @@ class TransactionLoader(BaseLoader[Transaction]):
             "limit": self.config.PAGE_SIZE,
             "dateFrom": alfa_from_date,
             "dateTo": alfa_to_date,
-            "orderStateStr": ",".join(map(str, self.statuses)),
+            "orderStateStr": ",".join(str(status.value) for status in self.statuses),
             "page": '1',
             "dateMode": "CREATION_DATE",
             "merchants": "",
