@@ -9,5 +9,6 @@ class AlfaConfig:
     MAX_FUTURES: int = 10
     PARSE_TIMESTAMP: bool = False
     PARSE_TIMESTAMP_AS_UTC3: bool = False
+    PARSE_AMOUNT: bool = False
     MAP_RUSSIAN_COLUMNS: bool = False
     UTC_3_SEARCH: bool = True

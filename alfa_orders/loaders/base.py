@@ -18,6 +18,10 @@ class BaseLoader(Generic[T]):
         if config.PARSE_TIMESTAMP:
             from alfa_orders.processors import TimestampProcessor
             self.post_processors.append(TimestampProcessor(self, self.config))
+        if config.PARSE_AMOUNT:
+            from alfa_orders.processors import ParseAmountProcessor
+            self.post_processors.append(ParseAmountProcessor(self, self.config))
+        # should be in the end
         if config.MAP_RUSSIAN_COLUMNS:
             from alfa_orders.processors import RussianColumnProcessor
             self.post_processors.append(RussianColumnProcessor(self, self.config))

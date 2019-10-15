@@ -36,3 +36,17 @@ class RussianColumnProcessor(BaseProcessor):
     def __call__(self, orders: Iterable[Dict]) -> Iterable[Dict]:
         for order in orders:
             yield {self.loader.columns.get(field, field): value for field, value in order.items()}
+
+
+class ParseAmountProcessor(BaseProcessor):
+    def __call__(self, orders: Iterable[Dict]) -> Iterable[Dict]:
+        for order in orders:
+            yield {
+                **order,
+                **{
+                    # '3500,00' > 3500
+                    field: float(value.replace(",", ".")) if value else value
+                    for field, value in order.items()
+                    if "amount" in field.lower()
+                }
+            }
