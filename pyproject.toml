@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "alfa-orders"
-version = "0.3.0"
+version = "0.4.0"
 description = "Lib for loading AlfaBank orders"
 authors = ["potykion <potykion@gmail.com>"]
 readme = "README.md"
