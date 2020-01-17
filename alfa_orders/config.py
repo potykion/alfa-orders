@@ -14,3 +14,4 @@ class AlfaConfig:
     MAP_RUSSIAN_COLUMNS: bool = False
     MAP_REFUND_STATUS: bool = False
     LAZY_SESSION_INIT: bool = False
+    ONLY_FIRST_PAGE: bool = False

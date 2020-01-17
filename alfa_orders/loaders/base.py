@@ -1,10 +1,12 @@
 import datetime as dt
 from abc import abstractmethod
+from functools import partial
 from itertools import count
 from typing import Generic, Iterable
 
 import requests
 from more_itertools import flatten, chunked
+from toolz import pipe
 
 from alfa_orders.config import AlfaConfig
 from alfa_orders.models import AlfaFuture, T
@@ -35,12 +37,31 @@ class BaseLoader(Generic[T]):
         pass
 
     def _load(self, from_date, to_date):
-        futures = (self._get_future(from_date, to_date, offset) for offset in count(0, self.config.PAGE_SIZE))
-        future_batches = chunked(futures, self.config.MAX_FUTURES)
+        # делаем фьюча-батчи:
+        #   делаем оффсеты (0, 100, ...),
+        #   оффсеты -> фьючи - асинхронно берем заказы за период с оффсетом,
+        #   фьючи -> фьюча-батчи: [f1, f2, f3, f4] -> [[f1, f2], [f3, f4]]
+        future_batches = pipe(
+            count(0, self.config.PAGE_SIZE),
+            lambda offsets: (self._get_future(from_date, to_date, offset) for offset in offsets),
+            lambda futures: chunked(futures, self.config.MAX_FUTURES)
+        )
+        # для каждого фьюча-батча:
+        #   получаем заказы,
+        #   делаем пост-обработку,
+        #   уменьшаем размерность: [[o1, o2], [o3, o4]] -> [o1, o2, o3, o4],
+        #   конвертим в кортеж
         order_batches = (
-            tuple(flatten(map(self._post_process, map(self._get_by_future, batch))))
+            pipe(
+                batch,
+                partial(map, self._get_by_future),
+                partial(map, self._post_process),
+                flatten,
+                tuple
+            )
             for batch in future_batches
         )
+        # отдаем заказы, пока они есть
         for batch in order_batches:
             yield from batch
             if len(batch) < self.config.PAGE_SIZE * self.config.MAX_FUTURES:

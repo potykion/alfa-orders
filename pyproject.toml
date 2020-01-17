@@ -10,6 +10,7 @@ python = "^3.7"
 requests = "^2.22"
 more-itertools = "^7.2"
 typing-extensions = "^3.7"
+toolz = "^0.10.0"
 
 [tool.poetry.dev-dependencies]
 
