@@ -37,6 +37,9 @@ class BaseLoader(Generic[T]):
         pass
 
     def _load(self, from_date, to_date):
+        # для быстрой загрузки заказов, фьючи преобразуются в батчи
+        # если нужно выгрузить только 1 страницу - размер батча = 1
+        max_futures = 1 if self.config.ONLY_FIRST_PAGE else self.config.MAX_FUTURES
         # делаем фьюча-батчи:
         #   делаем оффсеты (0, 100, ...),
         #   оффсеты -> фьючи - асинхронно берем заказы за период с оффсетом,
@@ -44,13 +47,13 @@ class BaseLoader(Generic[T]):
         future_batches = pipe(
             count(0, self.config.PAGE_SIZE),
             lambda offsets: (self._get_future(from_date, to_date, offset) for offset in offsets),
-            lambda futures: chunked(futures, self.config.MAX_FUTURES)
+            lambda futures: chunked(futures, max_futures)
         )
         # для каждого фьюча-батча:
         #   получаем заказы,
         #   делаем пост-обработку,
         #   уменьшаем размерность: [[o1, o2], [o3, o4]] -> [o1, o2, o3, o4],
-        #   конвертим в кортеж
+        #   конвертим в кортеж - получаем батчи заказов
         order_batches = (
             pipe(
                 batch,
@@ -61,9 +64,14 @@ class BaseLoader(Generic[T]):
             )
             for batch in future_batches
         )
-        # отдаем заказы, пока они есть
+        # отдаем заказы по батчам, пока они есть
+        # (или выгружаем только 1ый батч если ONLY_FIRST_PAGE)
         for batch in order_batches:
             yield from batch
+
+            if self.config.ONLY_FIRST_PAGE:
+                break
+
             if len(batch) < self.config.PAGE_SIZE * self.config.MAX_FUTURES:
                 break
 
